@@ -82,6 +82,9 @@ public class Controladora2 {
 
 
 	public void initialize(){
+		
+		// Llamar a un método de la clase de manipulación de BBDD para que me devuelva un ObservableList<Persona> datos
+		
 		tabla.setItems(this.datos);
 
 		col_nombre.setCellValueFactory(new PropertyValueFactory<Persona,String>("Nombre"));
