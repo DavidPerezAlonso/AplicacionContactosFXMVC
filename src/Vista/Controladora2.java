@@ -1,7 +1,9 @@
 package Vista;
 
+import java.sql.SQLException;
 import java.util.Optional;
 
+import Modelo.ConexionBBDD;
 import Modelo.Persona;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -68,24 +70,29 @@ public class Controladora2 {
 	@FXML
 	private TextField email;
 
+	@FXML
+	private Button btn_buscar;
+
+	@FXML
+	private TextField txt_buscar;
 
 
-	ObservableList<Persona> datos = FXCollections.observableArrayList(
 
-			new Persona("David", "Perez", "hola@hola.com",'H',true),
-			new Persona("Cris", "Perez", "hola2@hola.com",'M',false)
-			);
+	ObservableList<Persona> datos = FXCollections.observableArrayList();
 
 	// Atributos necesarios para codificar la edicion
 	private boolean edicion;
 	private int indiceedicion;
 
 
-	public void initialize(){
-		
+	public void initialize() throws SQLException{
+
 		// Llamar a un método de la clase de manipulación de BBDD para que me devuelva un ObservableList<Persona> datos
-		
-		tabla.setItems(this.datos);
+
+		ConexionBBDD con = new ConexionBBDD();
+		datos = con.ObtenerPersonas();
+
+		tabla.setItems(datos);
 
 		col_nombre.setCellValueFactory(new PropertyValueFactory<Persona,String>("Nombre"));
 		col_apellido.setCellValueFactory(new PropertyValueFactory<Persona,String>("Apellido"));
@@ -99,7 +106,7 @@ public class Controladora2 {
 
 	}
 
-	public void Guardar(){
+	public void Guardar() throws SQLException{
 
 		boolean casado = chkcasado.isSelected();
 		char sexo;
@@ -109,11 +116,12 @@ public class Controladora2 {
 		else
 			sexo = 'M';
 
+
 		// Añadir un chequeo de campos vacíos o de validación de formato como el email
 		if(txtNombre.getText().equals("") || txtApellido.getText().equals("") || email.getText().equals("")){
 			Alert alert = new Alert(AlertType.ERROR);
 			alert.setTitle("Error!!!");
-			alert.setHeaderText("Observa que hayas introducido todos lso datos");
+			alert.setHeaderText("Observa que hayas introducido todos los datos");
 			alert.setContentText("¡No se pueden grabar campos vacíos!");
 			alert.showAndWait();
 		}
@@ -121,25 +129,83 @@ public class Controladora2 {
 
 			if(edicion == true){
 
-				Persona editada = datos.get(indiceedicion);
-				editada.setNombre(txtNombre.getText());
-				editada.setApellido(txtApellido.getText());
-				editada.setEmail(email.getText());
-				editada.setCasado(casado);
-				editada.setSexo(sexo);
-				datos.set(indiceedicion, editada);
+				// Hago la llamda al método que hace el update en la base de datos
+				ConexionBBDD con = new ConexionBBDD();
+				int res = con.ModificarPersona(txtNombre.getText(), txtApellido.getText(), email.getText(), sexo, casado);
+				switch (res){
+
+					case 0:
+						Alert alert = new Alert(AlertType.INFORMATION);
+						alert.setTitle("OK!");
+						alert.setHeaderText("Modificación OK!");
+						alert.setContentText("¡Persona modificada con éxito!");
+						alert.showAndWait();
+
+						// Actualizo los datos de la tabla
+						datos = con.ObtenerPersonas();
+						tabla.setItems(datos);
+						break;
+
+					default:
+							alert = new Alert(AlertType.ERROR);
+							alert.setTitle("Error!");
+							alert.setHeaderText("Modificación NOK!");
+							alert.setContentText("¡Ha habido un problema al realizar el update!");
+							alert.showAndWait();
+							break;
+
+						}
+
+
+
 
 			}
 			else{
-				Persona nuevo = new Persona(txtNombre.getText(),txtApellido.getText(),email.getText(),sexo,casado);
-				datos.add(nuevo);
+				// Realizar el insertado de datos en la base de datos
+				ConexionBBDD con = new ConexionBBDD();
+				int res = con.InsertarPersona(txtNombre.getText(),txtApellido.getText(),email.getText(),sexo,casado);
+				switch (res){
+
+				case 0:
+					Alert alert = new Alert(AlertType.INFORMATION);
+					alert.setTitle("OK!");
+					alert.setHeaderText("Inserción OK!");
+					alert.setContentText("¡Persona insertada con éxito!");
+					alert.showAndWait();
+
+					// Actualizo los datos de la tabla
+					datos = con.ObtenerPersonas();
+					tabla.setItems(datos);
+					break;
+
+				case 1:
+					alert = new Alert(AlertType.WARNING);
+					alert.setTitle("Aviso!");
+					alert.setHeaderText("Inserción NOK!");
+					alert.setContentText("¡Ya existe una persona con ese email!");
+					alert.showAndWait();
+					break;
+
+				default:
+					alert = new Alert(AlertType.ERROR);
+					alert.setTitle("Error!");
+					alert.setHeaderText("Inserción NOK!");
+					alert.setContentText("¡Ha habido un problema al realizar la inserción!");
+					alert.showAndWait();
+					break;
+
+				}
+
+
+
+
 			}
 
 		}
 
 	}
 
-	public void Eliminar(){
+	public void Eliminar() throws SQLException{
 		int index = tabla.getSelectionModel().getSelectedIndex();
 		if( index >= 0){
 
@@ -154,8 +220,31 @@ public class Controladora2 {
 			Optional<ButtonType> result = alert.showAndWait();
 			if (result.get() == ButtonType.OK){
 			    // ... user chose OK
-				datos.remove(seleccionada);
-				tabla.setItems(this.datos);
+
+				// Llamar a un método que realice el DELETE en la base de datos
+				ConexionBBDD con = new ConexionBBDD();
+				int res = con.BorrarPersona(seleccionada.getEmail());
+				switch(res){
+					case 0:
+						alert = new Alert(AlertType.INFORMATION);
+						alert.setTitle("OK!");
+						alert.setHeaderText("Borrado OK!");
+						alert.setContentText("¡Persona borrada con éxito!");
+						alert.showAndWait();
+
+						// Actualizo los datos de la tabla
+						datos = con.ObtenerPersonas();
+						tabla.setItems(datos);
+						break;
+
+					default:
+						alert = new Alert(AlertType.ERROR);
+						alert.setTitle("Error!");
+						alert.setHeaderText("Inserción NOK!");
+						alert.setContentText("¡Ha habido un problema al realizar la inserción!");
+						alert.showAndWait();
+						break;
+				}
 
 				Borrar();
 			}
@@ -209,6 +298,19 @@ public class Controladora2 {
 		}
 	}
 
+
+	public void Buscar() throws SQLException{
+
+		String buscar = txt_buscar.getText();
+
+		// llama a un  método  que haga el select de la base de datos
+		ConexionBBDD con = new ConexionBBDD();
+		datos = con.BuscarPersonas(buscar);
+
+		tabla.setItems(datos);
+
+
+	}
 
 
 
