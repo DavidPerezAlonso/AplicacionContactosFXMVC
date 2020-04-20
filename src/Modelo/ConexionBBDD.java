@@ -47,19 +47,25 @@ public class ConexionBBDD {
 	 */
 	public int InsertarPersona(String nombre, String apellido, String email, char sexo, boolean casado) throws SQLException{
 
-		//Preparo la conexión para ejecutar sentencias SQL de tipo update
-		Statement stm = conexion.createStatement();
+
 
 		String auxcasado = "N";
 		if(casado == true)
 			auxcasado = "S";
 
-		// Preparo la sentencia SQL CrearTablaPersonas
-		String insertsql = "INSERT INTO DAVID.PERSONAS VALUES ('" + nombre + "','" + apellido + "','" + email + "','" + sexo +"','"+auxcasado +"')";
 
+		// Preparo la sentencia SQL
+		String insertsql = "INSERT INTO DAVID.PERSONAS VALUES (?,?,?,?,?)";
+
+		PreparedStatement pstmt = conexion.prepareStatement (insertsql);
+		pstmt.setString(1, nombre);
+		pstmt.setString(2, apellido);
+		pstmt.setString(3, email);
+		pstmt.setString(4, Character.toString(sexo));
+		pstmt.setString(5, auxcasado);
 		//ejecuto la sentencia
 		try{
-			int resultado = stm.executeUpdate(insertsql);
+			int resultado = pstmt.executeUpdate();
 
 			if(resultado != 1)
 				System.out.println("Error en la inserción " + resultado);
@@ -97,19 +103,24 @@ public class ConexionBBDD {
 	 */
 	public int ModificarPersona(String nombre, String apellido, String email, char sexo, boolean casado) throws SQLException{
 
-		//Preparo la conexión para ejecutar sentencias SQL de tipo update
-		Statement stm = conexion.createStatement();
-
 		String auxcasado = "N";
 		if(casado == true)
 			auxcasado = "S";
 
 		// Preparo la sentencia SQL CrearTablaPersonas
-		String updatesql = "UPDATE DAVID.PERSONAS SET NOMBRE='" + nombre + "', APELLIDO ='" + apellido + "', SEXO = '" + sexo +"', CASADO = '"+auxcasado +"' WHERE EMAIL='"+email+"'";
+		String updatesql = "UPDATE DAVID.PERSONAS SET NOMBRE= ?, APELLIDO =?, SEXO = ?, CASADO = ? WHERE EMAIL= ?";
+
+		PreparedStatement pstmt = conexion.prepareStatement (updatesql);
+		pstmt.setString(1, nombre);
+		pstmt.setString(2, apellido);
+		pstmt.setString(3, Character.toString(sexo));
+		pstmt.setString(3, auxcasado);
+		pstmt.setString(5, email);
+
 
 		//ejecuto la sentencia
 		try{
-			int resultado = stm.executeUpdate(updatesql);
+			int resultado = pstmt.executeUpdate();
 
 			if(resultado != 1)
 				System.out.println("Error en la actualización " + resultado);
@@ -182,15 +193,14 @@ public class ConexionBBDD {
 
 	public int BorrarPersona(String email) throws SQLException{
 
-		//Preparo la conexión para ejecutar sentencias SQL de tipo update
-		Statement stm = conexion.createStatement();
-
-		// Preparo la sentencia SQL
-		String deletesql = "DELETE DAVID.PERSONAS WHERE EMAIL='"+email+"'";
+		// Preparo la sentencia SQL y la conexión para ejecutar sentencias SQL de tipo update
+		String deletesql = "DELETE DAVID.PERSONAS WHERE EMAIL= ?";
+		PreparedStatement pstmt = conexion.prepareStatement (deletesql);
+		pstmt.setString(1, email);
 
 		//ejecuto la sentencia
 		try{
-			int resultado = stm.executeUpdate(deletesql);
+			int resultado = pstmt.executeUpdate();
 
 			if(resultado != 1)
 				System.out.println("Error en el borrado " + resultado);
@@ -214,20 +224,26 @@ public class ConexionBBDD {
 	public ObservableList<Persona> BuscarPersonas(String apellido) throws SQLException{
 
 		ObservableList<Persona> listapersonas = FXCollections.observableArrayList();
+		PreparedStatement pstmt;
 
-		//Preparo la conexión para ejecutar sentencias SQL de tipo update
-		Statement stm = conexion.createStatement();
 
-		// Preparo la sentencia SQL en función de lo que venga en apellido
+		// Preparo la sentencia SQL en función de lo que venga en apellido y la conexión para ejecutar sentencias SQL de tipo SELECT
 		String selectsql = "";
-		if(apellido.equals(""))
+		if(apellido.equals("")){
 			selectsql = "SELECT * FROM DAVID.PERSONAS";
-		else
-			selectsql = "SELECT * FROM DAVID.PERSONAS WHERE APELLIDO LIKE '" + apellido +"%'";
+			pstmt = conexion.prepareStatement (selectsql);
+		}
+		else{
+			selectsql = "SELECT * FROM DAVID.PERSONAS WHERE APELLIDO LIKE ?%";
+			pstmt = conexion.prepareStatement (selectsql);
+			pstmt.setString(1, apellido);
+		}
+
+
 
 		//ejecuto la sentencia
 		try{
-			ResultSet resultado = stm.executeQuery(selectsql);
+			ResultSet resultado = pstmt.executeQuery();
 
 			int contador = 0;
 			while(resultado.next()){
