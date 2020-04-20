@@ -1,38 +1,65 @@
 package Modelo;
-	import java.sql.*;
+	import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.*;
+import java.util.Properties;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 public class ConexionBBDD {
 
-	private String url= "jdbc:oracle:thin:@localhost:1521:XE";
-	private String usr = "SYSTEM";
-	private String pwd = "1234";
-	private Connection conexion;
-
+	private String url= "";
+	private   String user = "";
+	private String pwd = "";
+	private   String usr = "";
+	private   Connection conexion;
 
 	public ConexionBBDD()  {
 
-			try {
-				Class.forName("oracle.jdbc.driver.OracleDriver");
-				conexion = DriverManager.getConnection(url, usr, pwd);
 
-				if(!conexion.isClosed()) {
-					System.out.println("Conexión establecida");
-
-					//conexion.close();
-				}
-				else
-					System.out.println("Fallo en Conexión");
-
-
-			}catch (Exception e) {
-				System.out.println("ERROR en conexión con ORACLE");
-				e.printStackTrace();
+		Properties propiedades = new Properties();
+		InputStream entrada = null;
+		try {
+			File miFichero = new File("src/Modelo/datos.ini");
+			if (miFichero.exists()){
+				entrada = new FileInputStream(miFichero);
+				propiedades.load(entrada);
+				url=propiedades.getProperty("url");
+				user=propiedades.getProperty("user");
+				pwd=propiedades.getProperty("pwd");
+				usr=propiedades.getProperty("usr");
 			}
 
+			else
+				System.out.println("Fichero no encontrado");
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}finally {
+			if (entrada != null) {
+				try {
+					entrada.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
 		}
+
+		try {
+			Class.forName("oracle.jdbc.driver.OracleDriver");
+			conexion = DriverManager.getConnection(url, user, pwd);
+
+			if(conexion.isClosed())
+				System.out.println("Fallo en Conexión con la Base de Datos");
+
+
+		}catch (Exception e) {
+			System.out.println("ERROR en conexión con ORACLE");
+			e.printStackTrace();
+		}
+	}
 
 
 
@@ -55,7 +82,7 @@ public class ConexionBBDD {
 
 
 		// Preparo la sentencia SQL
-		String insertsql = "INSERT INTO DAVID.PERSONAS VALUES (?,?,?,?,?)";
+		String insertsql = "INSERT INTO " + usr +".PERSONAS VALUES (?,?,?,?,?)";
 
 		PreparedStatement pstmt = conexion.prepareStatement (insertsql);
 		pstmt.setString(1, nombre);
@@ -108,7 +135,7 @@ public class ConexionBBDD {
 			auxcasado = "S";
 
 		// Preparo la sentencia SQL CrearTablaPersonas
-		String updatesql = "UPDATE DAVID.PERSONAS SET NOMBRE= ?, APELLIDO =?, SEXO = ?, CASADO = ? WHERE EMAIL= ?";
+		String updatesql = "UPDATE " + usr + ".PERSONAS SET NOMBRE= ?, APELLIDO =?, SEXO = ?, CASADO = ? WHERE EMAIL= ?";
 
 		PreparedStatement pstmt = conexion.prepareStatement (updatesql);
 		pstmt.setString(1, nombre);
@@ -154,7 +181,7 @@ public class ConexionBBDD {
 		Statement stm = conexion.createStatement();
 
 		// Preparo la sentencia SQL CrearTablaPersonas
-		String selectsql = "SELECT * FROM DAVID.PERSONAS";
+		String selectsql = "SELECT * FROM " + usr +".PERSONAS";
 
 		//ejecuto la sentencia
 		try{
@@ -194,7 +221,7 @@ public class ConexionBBDD {
 	public int BorrarPersona(String email) throws SQLException{
 
 		// Preparo la sentencia SQL y la conexión para ejecutar sentencias SQL de tipo update
-		String deletesql = "DELETE DAVID.PERSONAS WHERE EMAIL= ?";
+		String deletesql = "DELETE " + usr +".PERSONAS WHERE EMAIL= ?";
 		PreparedStatement pstmt = conexion.prepareStatement (deletesql);
 		pstmt.setString(1, email);
 
@@ -230,11 +257,11 @@ public class ConexionBBDD {
 		// Preparo la sentencia SQL en función de lo que venga en apellido y la conexión para ejecutar sentencias SQL de tipo SELECT
 		String selectsql = "";
 		if(apellido.equals("")){
-			selectsql = "SELECT * FROM DAVID.PERSONAS";
+			selectsql = "SELECT * FROM " + usr +".PERSONAS";
 			pstmt = conexion.prepareStatement (selectsql);
 		}
 		else{
-			selectsql = "SELECT * FROM DAVID.PERSONAS WHERE APELLIDO LIKE ?%";
+			selectsql = "SELECT * FROM " + usr +".PERSONAS WHERE APELLIDO LIKE ?%";
 			pstmt = conexion.prepareStatement (selectsql);
 			pstmt.setString(1, apellido);
 		}
