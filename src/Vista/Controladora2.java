@@ -104,6 +104,7 @@ public class Controladora2 {
 		edicion = false;
 		indiceedicion = 0;
 
+
 	}
 
 	public void Guardar() throws SQLException{

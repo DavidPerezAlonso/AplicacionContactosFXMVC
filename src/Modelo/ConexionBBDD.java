@@ -261,9 +261,10 @@ public class ConexionBBDD {
 			pstmt = conexion.prepareStatement (selectsql);
 		}
 		else{
-			selectsql = "SELECT * FROM " + usr +".PERSONAS WHERE APELLIDO LIKE ?%";
+			selectsql = "SELECT * FROM " + usr +".PERSONAS WHERE APELLIDO LIKE ?";
 			pstmt = conexion.prepareStatement (selectsql);
-			pstmt.setString(1, apellido);
+			//necesita formatear el comodín de la búsqueda fuera del string del SQL preparedstament
+			pstmt.setString(1, apellido+"%");
 		}
 
 
